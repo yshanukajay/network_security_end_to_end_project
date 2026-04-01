@@ -34,6 +34,15 @@ def save_numpy_array_data(file_path: str, array: np.array) -> None:
         raise CustomException(e, sys)
     
 
+def load_numpy_array_data(file_path: str) -> np.array:
+    try:
+        if not os.path.exists(file_path):
+            raise CustomException(f"The file: {file_path} does not exist", sys)
+        return np.load(file_path)
+    except Exception as e:
+        raise CustomException(e, sys) from e
+    
+
 def save_object(file_path: str, obj: object) -> None:
     try:
         dir_path = os.path.dirname(file_path)
@@ -42,3 +51,14 @@ def save_object(file_path: str, obj: object) -> None:
             pickle.dump(obj, file_obj)
     except Exception as e:
         raise CustomException(e, sys)
+    
+
+def load_object(file_path: str) -> object:
+    try:
+        if not os.path.exists(file_path):
+            raise CustomException(f"The file: {file_path} does not exist", sys)
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+    except Exception as e:
+        raise CustomException(e, sys) from e
+    
