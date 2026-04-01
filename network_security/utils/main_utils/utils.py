@@ -1,3 +1,5 @@
+from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
 import yaml
 from network_security.exception.exception import CustomException
 from network_security.logging.logger import logging
@@ -62,3 +64,26 @@ def load_object(file_path: str) -> object:
     except Exception as e:
         raise CustomException(e, sys) from e
     
+
+def evaluate_model(X_train, y_train, X_test, y_test, models, params):
+    report = {}
+
+    try:
+        logging.info(f"Evaluating models: {list(models.keys())} with hyperparameters: {params}")
+        for name, model in models.items():
+            gs = GridSearchCV(model, params[name], cv=3)
+            gs.fit(X_train, y_train)
+
+            best_model = gs.best_estimator_
+            # Keep the fitted/tuned estimator so callers can use it directly.
+            models[name] = best_model
+            y_test_pred = best_model.predict(X_test)
+            score = r2_score(y_test, y_test_pred)
+            logging.info(f"Model: {name} has R2 score: {score} on test data")
+            report[name] = score
+        
+        return report
+    
+    except Exception as e:
+        logging.error(f"Error occurred while evaluating models: {e}")
+        raise CustomException(e, sys)
