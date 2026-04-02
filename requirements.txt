@@ -8,5 +8,9 @@ scikit-learn
 pyyaml>=6.0
 mlflow
 dagshub
+fastapi
+uvicorn
+python-multipart
+jinja2
 
 -e .
