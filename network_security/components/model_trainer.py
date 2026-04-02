@@ -24,6 +24,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import r2_score
 
+import dagshub
+dagshub.init(repo_owner='YohanJay23', repo_name='network_security_end_to_end_project', mlflow=True)
+
+
 class ModelTrainer:
     def __init__(
             self, 
@@ -40,7 +44,7 @@ class ModelTrainer:
             raise CustomException(e, sys)
         
     
-    def track_mlflow(self, best_model, classification_artifact):
+    def track_mlflow(self, best_model, params, classification_artifact):
         try:
             logging.info(f"Tracking model training with mlflow")
             with mlflow.start_run(run_name="Model Training"):
@@ -51,6 +55,8 @@ class ModelTrainer:
                 mlflow.log_metric("f1_score", f1_score)
                 mlflow.log_metric("precision_score", precision_score)
                 mlflow.log_metric("recall_score", recall_score)
+
+                mlflow.log_params(params)
 
                 mlflow.sklearn.log_model(best_model, artifact_path="model")
                 logging.info(f"Model training tracked successfully with mlflow")
@@ -120,13 +126,13 @@ class ModelTrainer:
             classification_train_artifact = get_classification_score(y_true=y_train, y_pred=y_train_pred)
 
             ##tracking training metrics and model with mlflow
-            self.track_mlflow(best_model, classification_train_artifact)
+            self.track_mlflow(best_model, params[best_model_name], classification_train_artifact)
 
             y_test_pred = best_model.predict(X_test)
             classification_test_artifact = get_classification_score(y_true=y_test, y_pred=y_test_pred)
 
             ##tracking test metrics and model with mlflow
-            self.track_mlflow(best_model, classification_test_artifact)
+            self.track_mlflow(best_model, params[best_model_name], classification_test_artifact)
 
             preprocessor = load_object(file_path=self.data_transformation_artifact.preprocessor_object_file_path)
             
@@ -135,6 +141,9 @@ class ModelTrainer:
             
             network_model_estimator = NetworkModelEstimator(preprocessor=preprocessor, model=best_model)
             save_object(file_path=self.model_trainer_config.trained_model_file_path, obj=network_model_estimator)
+
+            ##saving the best model to final_models folder
+            save_object("final_models/model.pkl", best_model)
 
             logging.info(f"Trained model saved successfully to {self.model_trainer_config.trained_model_file_path}")
             
