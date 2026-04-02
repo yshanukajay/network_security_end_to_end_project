@@ -1,4 +1,5 @@
 import os, sys
+import mlflow
 from network_security.exception.exception import CustomException
 from network_security.logging.logger import logging
 
@@ -38,6 +39,27 @@ class ModelTrainer:
             logging.error(f"Error while initializing Model Trainer class: {e}")
             raise CustomException(e, sys)
         
+    
+    def track_mlflow(self, best_model, classification_artifact):
+        try:
+            logging.info(f"Tracking model training with mlflow")
+            with mlflow.start_run(run_name="Model Training"):
+                f1_score = classification_artifact.model_f1_score
+                precision_score = classification_artifact.model_precision_score
+                recall_score = classification_artifact.model_recall_score
+
+                mlflow.log_metric("f1_score", f1_score)
+                mlflow.log_metric("precision_score", precision_score)
+                mlflow.log_metric("recall_score", recall_score)
+
+                mlflow.sklearn.log_model(best_model, artifact_path="model")
+                logging.info(f"Model training tracked successfully with mlflow")
+
+        except Exception as e:
+            logging.error(f"Error while tracking model training with mlflow: {e}")
+            raise CustomException(e, sys)
+                
+        
     def train_model(self, X_train, y_train, X_test, y_test):
         try:
             models = {
@@ -51,29 +73,29 @@ class ModelTrainer:
 
             params = {
                 "Logistic Regression": {
-                    'C': [0.1, 1.0, 10],
+                    'C': [0.1, 1.5, 15],
                     'solver': ['liblinear', 'lbfgs']
                 },
                 "KNN": {
-                    'n_neighbors': [3, 5, 7],
+                    'n_neighbors': [3, 8, 10],
                     'weights': ['uniform', 'distance']
                 },
                 "Decision Tree": {
                     'criterion': ['gini', 'entropy'],
-                    'max_depth': [None, 10, 20]
+                    'max_depth': [None, 15, 20]
                 },
                 "Random Forest": {
                     'n_estimators': [50, 100, 150],
-                    'max_depth': [None, 10, 20, 25],
-                    'min_samples_split': [2, 5, 8],
-                    'min_samples_leaf': [1, 2, 4]
+                    'max_depth': [None, 15, 20, 25],
+                    'min_samples_split': [2, 6, 8],
+                    'min_samples_leaf': [1, 3, 4]
                 },
                 "Gradient Boosting": {
-                    'n_estimators': [100, 200],
+                    'n_estimators': [100, 150],
                     'learning_rate': [0.01, 0.1]
                 },
                 "AdaBoost": {
-                    'n_estimators': [50, 100],
+                    'n_estimators': [50, 75, 100],
                     'learning_rate': [0.01, 0.1]
                 }
             }
@@ -97,8 +119,14 @@ class ModelTrainer:
             y_train_pred = best_model.predict(X_train)
             classification_train_artifact = get_classification_score(y_true=y_train, y_pred=y_train_pred)
 
+            ##tracking training metrics and model with mlflow
+            self.track_mlflow(best_model, classification_train_artifact)
+
             y_test_pred = best_model.predict(X_test)
             classification_test_artifact = get_classification_score(y_true=y_test, y_pred=y_test_pred)
+
+            ##tracking test metrics and model with mlflow
+            self.track_mlflow(best_model, classification_test_artifact)
 
             preprocessor = load_object(file_path=self.data_transformation_artifact.preprocessor_object_file_path)
             
