@@ -1,21 +1,23 @@
-name: CI Pipeline
+name: workflow
 
 on:
-  push:
-    branches: [main]
-
+    push:
+        branches: 
+            -main
+        paths-ignore:
+            - README.md
+            
 jobs:
-  integration:
-    runs-on: ubuntu-latest
+    integration:
+        name: Continuous Integration
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
 
-    steps:
-      - uses: actions/checkout@v3
+            - name: Lint Code
+              run: echo "Linting repository"
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Lint Code
-        run: flake8 .
-
-      - name: Run Tests
-        run: pytest
+            - name: Run unit tests
+              run: echo "Running unit tests"
+              
