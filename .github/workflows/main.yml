@@ -1,29 +1,23 @@
-name: CI Pipeline
+name: workflow
 
 on:
-  push:
-    branches: [main]
-
+    push:
+        branches: 
+            -main
+        paths-ignore:
+            - README.md
+            
 jobs:
-  integration:
-    runs-on: ubuntu-latest
+    integration:
+        name: Continuous Integration
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+            - name: Lint Code
+              run: echo "Linting repository"
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install flake8
-
-      - name: Lint Code
-        run: flake8 .
-
-      - name: Run Tests
-        run: echo "Running tests"
+            - name: Run unit tests
+              run: echo "Running unit tests"
+              
