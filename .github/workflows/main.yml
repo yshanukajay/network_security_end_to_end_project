@@ -1,0 +1,21 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint Code
+        run: flake8 .
+
+      - name: Run Tests
+        run: pytest
